@@ -224,9 +224,26 @@ function getDrawCountToday(){return getTodayHistory().length}
 function getPaidAmount(){return getPaidDrawCount()*500}
 function getPaidAmountToday(){return getPaidDrawCountToday()*500}
 function weighted(t){
-  let r=Math.random()*100,s=0;
-  for(const x of t){s+=Number(x[2])||0;if(r<s)return x}
-  return t[t.length-1];
+  const arr=Array.isArray(t)?t:[];
+  const normalized=arr.map(x=>{
+    if(Array.isArray(x)){
+      return [x[0],Number(x[1])||0,Number(x[2])||0];
+    }
+    if(x && typeof x==="object"){
+      return [String(x.rarity||"N"),Number(x.amount)||0,Number(x.probability)||0];
+    }
+    return null;
+  }).filter(x=>x && Number(x[2])>=0);
+  if(!normalized.length) throw new Error("INVALID_GACHA_TABLE");
+  const total=normalized.reduce((a,x)=>a+Number(x[2]),0);
+  if(total<=0) throw new Error("INVALID_GACHA_TABLE");
+  const r=Math.random()*total;
+  let s=0;
+  for(const x of normalized){
+    s+=Number(x[2]);
+    if(r<s)return x;
+  }
+  return normalized[normalized.length-1];
 }
 
 function setCloudStatus(text){
@@ -368,6 +385,8 @@ async function doDraw(type,count){
     if(err.message==="NOT_ENOUGH_TICKETS"){
       await refreshCloud();
       openModal(`<h2>回数券が足りません</h2><p>別の端末で回数券が使われた可能性があります。最新の状態に更新しました。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+    }else if(err.message==="INVALID_GACHA_TABLE"){
+      openModal(`<h2>ガチャ設定を読み込めません</h2><p>ガチャの排出設定の形式を修復する必要があります。</p><p>管理画面の確率設定を初期値に戻す処理を行います。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
     }else{
       openModal(`<h2>ガチャを保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><p style="font-size:12px;text-align:left;word-break:break-word;background:#111;padding:10px;border-radius:8px;">${escapeHtml((err && (err.code || err.message)) ? ((err.code||"") + " " + (err.message||"")) : String(err))}</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
     }
