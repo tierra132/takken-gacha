@@ -114,12 +114,22 @@ function decodeTables(tables){
   for(const key of Object.keys(DEFAULT_TABLES)){
     const v=src[key];
     if(Array.isArray(v)){
+      // Firestore-safe format: [{rarity, amount, probability}, ...]
       // Legacy/local format: [["N",0,72], ...]
-      out[key]=v.map(x=>Array.isArray(x)?[x[0],Number(x[1])||0,Number(x[2])||0]:x);
+      out[key]=v.map(x=>{
+        if(Array.isArray(x)){
+          return [x[0], Number(x[1])||0, Number(x[2])||0];
+        }
+        if(x && typeof x==="object"){
+          return [x.rarity, Number(x.amount)||0, Number(x.probability)||0];
+        }
+        return null;
+      }).filter(Boolean);
     }else if(v && typeof v==="object"){
-      // Firestore-safe format: [{rarity:"N",amount:0,probability:72}, ...]
       const vals=Object.keys(v).sort((a,b)=>Number(a)-Number(b)).map(k=>v[k]);
-      out[key]=vals.map(x=>[x.rarity,Number(x.amount)||0,Number(x.probability)||0]);
+      out[key]=vals.map(x=>Array.isArray(x)
+        ? [x[0],Number(x[1])||0,Number(x[2])||0]
+        : [x.rarity,Number(x.amount)||0,Number(x.probability)||0]);
     }
   }
   return out;
@@ -140,6 +150,22 @@ function encodeTables(tables){
 function toFirestoreState(s){
   const x=clone(s);
   x.tables=encodeTables(s.tables);
+  // Firestore rejects undefined values. Normalize history records explicitly.
+  x.history=(Array.isArray(s.history)?s.history:[]).map(h=>({
+    time:String(h.time||""),
+    dateKey:String(h.dateKey||""),
+    type:String(h.type||""),
+    drawNo:Number(h.drawNo)||0,
+    rarity:String(h.rarity||"N"),
+    amount:Number(h.amount)||0,
+    paid:Boolean(h.paid)
+  }));
+  x.tickets=Number(s.tickets)||0;
+  x.todayStudy=Number(s.todayStudy)||0;
+  x.totalStudy=Number(s.totalStudy)||0;
+  x.winnings=Number(s.winnings)||0;
+  x.examDate=String(s.examDate||"2026-10-18");
+  x.lastStudyDate=String(s.lastStudyDate||"");
   return x;
 }
 
