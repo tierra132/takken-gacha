@@ -90,6 +90,7 @@ const db = getFirestore(app);
 const STATE_REF = doc(db, "app", "state");
 
 const ADMIN_PASSWORD = "takken261018";
+const GACHA_PASSWORD = "gacha261018";
 const KEY="takken_gacha_v2";
 const OLD_KEY="takken_gacha_v1";
 
@@ -256,6 +257,22 @@ function openStudyModal(){
   };
 }
 
+function requestGachaAccess(type,count){
+  if(state.tickets<count)return;
+  openModal(`<h2>🔐 ガチャを引く</h2><p>宅建チャレンジ参加者用のパスワードを入力してください。</p><input id="gachaPw" name="password" type="password" autocomplete="current-password" placeholder="パスワード"><div class="modalBtns"><button class="cancel" id="gachaCancel">キャンセル</button><button class="ok" id="gachaLogin">認証して進む</button></div>`);
+  const pw=document.getElementById("gachaPw");
+  setTimeout(()=>pw?.focus(),50);
+  document.getElementById("gachaCancel").onclick=closeModal;
+  document.getElementById("gachaLogin").onclick=()=>{
+    if(pw.value===GACHA_PASSWORD){
+      closeModal();
+      confirmDraw(type,count);
+    }else{
+      openModal(`<h2>パスワードが違います</h2><p>もう一度入力してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+    }
+  };
+}
+
 function confirmDraw(type,count){
   if(state.tickets<count)return;
   const name=type==="red"?"🔴 赤がちゃ":"🔵 青がちゃ";
@@ -326,10 +343,10 @@ function showResults(rs,i=0){
   openModal(`<div class="result ${x.rarity==="UR"?"flash":""}"><div class="rarity ${cls} spark">${escapeHtml(x.rarity)}</div><div class="reward">${escapeHtml(x.reward)}</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`);
 }
 
-document.getElementById("red1").onclick=()=>confirmDraw("red",1);
-document.getElementById("blue1").onclick=()=>confirmDraw("blue",1);
-document.getElementById("red10").onclick=()=>confirmDraw("red",10);
-document.getElementById("blue10").onclick=()=>confirmDraw("blue",10);
+document.getElementById("red1").onclick=()=>requestGachaAccess("red",1);
+document.getElementById("blue1").onclick=()=>requestGachaAccess("blue",1);
+document.getElementById("red10").onclick=()=>requestGachaAccess("red",10);
+document.getElementById("blue10").onclick=()=>requestGachaAccess("blue",10);
 
 function detail(html){
   const d=document.getElementById("detail");d.innerHTML=html;d.classList.add("open");
@@ -339,7 +356,15 @@ function tableHtml(type,title){return `<h3>${title}</h3><table class="probtable"
 document.getElementById("redDetailBtn").onclick=()=>detail(tableHtml("red","🔴 "+state.gachas.red.name+" 詳細"));document.getElementById("blueDetailBtn").onclick=()=>detail(tableHtml("blue","🔵 "+state.gachas.blue.name+" 詳細"));
 document.getElementById("historyBtn").onclick=()=>{let h=state.history.slice().reverse().map(x=>`<div class="row"><span>${x.time}<br>${x.type==="red"?"🔴":"🔵"} ${x.drawNo}回目・${x.rarity}${x.paid===false?"（11回目）":""}<br>${escapeHtml(x.reward||"")}</span></div>`).join("");detail(`<h3>📜 ガチャ履歴</h3><div class="history">${h||'<div class="empty">まだ履歴はありません。</div>'}</div>`)};document.getElementById("statsBtn").onclick=()=>{let r={N:0,R:0,SR:0,SSR:0,UR:0};state.history.forEach(x=>{if(r[x.rarity]!==undefined)r[x.rarity]++});detail(`<h3>📊 レアリティ集計</h3><div class="row"><span>合計で引いた回数</span><b>${getDrawCount()}回</b></div>${Object.entries(r).map(([k,v])=>`<div class="row"><span>${k}</span><b>${v}回</b></div>`).join("")}`)};
 
-document.getElementById("adminBtn").onclick=()=>openModal(`<h2>🔐 管理</h2><p>管理パスワードを入力してください。</p><input id="pw" type="password" autocomplete="off"><div class="modalBtns"><button class="cancel" id="adminCancel">キャンセル</button><button class="ok" id="login">入室</button></div>`);document.addEventListener("click",e=>{if(e.target.id==="adminCancel")closeModal()});
+document.getElementById("adminBtn").onclick=()=>{
+  openModal(`<h2>🔐 管理</h2><p>管理パスワードを入力してください。</p><input id="pw" name="admin-password" type="password" autocomplete="off"><div class="modalBtns"><button class="cancel" id="adminCancel">キャンセル</button><button class="ok" id="login">入室</button></div>`);
+  document.getElementById("adminCancel").onclick=closeModal;
+  document.getElementById("login").onclick=()=>{
+    const pw=document.getElementById("pw");
+    if(pw.value===ADMIN_PASSWORD){closeModal();showAdmin()}
+    else openModal(`<h2>パスワードが違います</h2><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+  };
+};
 function tableEditor(key,label){return `<div class="sectionTitle">${label}</div><div class="probedit" style="font-size:12px;color:#737982"><span>レア</span><span>ごほうび</span><span>確率(%)</span></div>${state.tables[key].map((x,i)=>`<div class="probedit"><span><b>${x[0]}</b></span><input maxlength="12" id="${key}_r_${i}" value="${escapeHtml(x[1])}" placeholder="最大12文字"><input type="number" min="0" max="100" step="0.1" id="${key}_p_${i}" value="${x[2]}"></div>`).join("")}<div class="note">ごほうびは最大12文字。確率合計は100%にしてください。</div>`}
 function showAdmin(){const a=document.getElementById("admin");a.classList.add("open");document.getElementById("detail").classList.remove("open");a.innerHTML=`<h3>⚙ 管理画面</h3><label>ガチャ可能回数</label><input id="aTickets" type="number" min="0" value="${state.tickets}"><label>今日の勉強時間（分）</label><input id="aToday" type="number" min="0" value="${state.todayStudy}"><label>累計勉強時間（分）</label><input id="aTotal" type="number" min="0" value="${state.totalStudy}"><label>試験日</label><input id="aExam" type="date" value="${state.examDate}"><div class="sectionTitle">🔴 赤がちゃ 表示設定</div><label>ガチャ名（最大30文字）</label><input id="redNameEdit" maxlength="30" value="${escapeHtml(state.gachas.red.name)}"><label>コメント（最大30文字）</label><input id="redCommentEdit" maxlength="30" value="${escapeHtml(state.gachas.red.comment)}"><div class="sectionTitle">🔵 青がちゃ 表示設定</div><label>ガチャ名（最大30文字）</label><input id="blueNameEdit" maxlength="30" value="${escapeHtml(state.gachas.blue.name)}"><label>コメント（最大30文字）</label><input id="blueCommentEdit" maxlength="30" value="${escapeHtml(state.gachas.blue.comment)}">${tableEditor("red","🔴 赤がちゃ 通常")}${tableEditor("blue","🔵 青がちゃ 通常")}${tableEditor("redBonus","🔴 赤がちゃ 11回目")}${tableEditor("blueBonus","🔵 青がちゃ 11回目")}<div class="adminGrid"><button class="smallbtn" id="adminSave">修正を保存</button><button class="smallbtn" id="adminClose">閉じる</button></div><hr><p style="font-size:12px;color:#777">※通常画面の詳細には通常1連の排出確率のみ表示します。11回目の設定は管理画面でのみ確認できます。</p><button class="smallbtn danger" id="reset">全データ初期化</button>`;document.getElementById("adminSave").onclick=async()=>{const next=clone(state);next.tickets=Math.max(0,+document.getElementById("aTickets").value||0);next.todayStudy=Math.max(0,+document.getElementById("aToday").value||0);next.totalStudy=Math.max(0,+document.getElementById("aTotal").value||0);next.examDate=document.getElementById("aExam").value||"2026-10-18";next.gachas.red={name:document.getElementById("redNameEdit").value.slice(0,30),comment:document.getElementById("redCommentEdit").value.slice(0,30)};next.gachas.blue={name:document.getElementById("blueNameEdit").value.slice(0,30),comment:document.getElementById("blueCommentEdit").value.slice(0,30)};for(const key of ["red","blue","redBonus","blueBonus"]){let sum=0;for(let i=0;i<5;i++){const reward=document.getElementById(`${key}_r_${i}`).value.trim();const p=Math.max(0,+document.getElementById(`${key}_p_${i}`).value||0);if(reward.length>12){openModal(`<h2>文字数を確認してください</h2><p>${key}のごほうびは最大12文字です。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);return}next.tables[key][i][1]=reward;next.tables[key][i][2]=p;sum+=p}if(Math.abs(sum-100)>.001){openModal(`<h2>確率を確認してください</h2><p>${key}の確率合計が <b>${sum}%</b> です。<br>100%になるよう修正してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);return}}try{await updateCloud(()=>next);showAdmin()}catch(err){console.error(err);openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`)}};document.getElementById("adminClose").onclick=()=>a.classList.remove("open");document.getElementById("reset").onclick=async()=>{if(confirm("全データを初期化します。よろしいですか？")){if(confirm("本当に削除しますか？")){try{await deleteDoc(STATE_REF);localStorage.removeItem(KEY);localStorage.removeItem(OLD_KEY);state=clone(defaults);cloudReady=false;await ensureCloudState();render();showAdmin()}catch(err){console.error(err);openModal(`<h2>初期化できませんでした</h2><p>Firebaseへの接続を確認してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`)}}}}}
 
