@@ -140,10 +140,10 @@ function weighted(t){
   const arr=Array.isArray(t)?t:[];
   const normalized=arr.map(x=>{
     if(Array.isArray(x)){
-      return [x[0],Number(x[1])||0,Number(x[2])||0];
+      return [String(x[0]||"N"),String(x[1]??""),Number(x[2])||0];
     }
     if(x && typeof x==="object"){
-      return [String(x.rarity||"N"),Number(x.amount)||0,Number(x.probability)||0];
+      return [String(x.rarity||"N"),String(x.reward??x.bonus??x.amount??""),Number(x.probability)||0];
     }
     return null;
   }).filter(x=>x && Number(x[2])>=0);
