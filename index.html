@@ -145,10 +145,11 @@ function toFirestoreState(s){
 
 function normalizeState(s){
   const raw=clone(s||{});
-  raw.tables=decodeTables(raw.tables);
+  const decodedTables=decodeTables(raw.tables);
+  delete raw.tables;
   const x={...clone(defaults),...raw};
   x.history=Array.isArray(x.history)?x.history:[];
-  x.tables={...clone(DEFAULT_TABLES),...(s?.tables||{})};
+  x.tables={...clone(DEFAULT_TABLES),...decodedTables};
   for(const k of Object.keys(DEFAULT_TABLES)){
     if(!Array.isArray(x.tables[k])||x.tables[k].length!==5)x.tables[k]=clone(DEFAULT_TABLES[k]);
   }
