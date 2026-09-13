@@ -18,7 +18,7 @@
 .probtable{width:100%;border-collapse:collapse;font-size:13px}.probtable th,.probtable td{padding:8px 5px;border-bottom:1px solid var(--line);text-align:right}.probtable th:first-child,.probtable td:first-child{text-align:left}
 .note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5}
 .overlay{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.overlay.show{display:flex}.modal{width:min(460px,100%);max-height:90vh;overflow:auto;background:white;border-radius:18px;padding:22px;text-align:center}.modal h2{margin:0 0 10px}.modal p{color:var(--muted);line-height:1.6}.modal input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:16px}.modalBtns{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}.modalBtns button{border:0;border-radius:11px;padding:12px;font-weight:800}.ok{background:#242a31;color:white}.cancel{background:#edf0f2}.singleBtn{width:100%;margin-top:12px;border:0;border-radius:11px;padding:12px;font-weight:800;background:#242a31;color:white}
-.result{min-height:180px;display:flex;flex-direction:column;justify-content:center}.rarity{font-size:46px;font-weight:900;letter-spacing:2px}.amount{font-size:30px;font-weight:900;margin-top:8px}.n{color:#555}.r{color:#4779bd}.sr{color:#7953a6}.ssr{color:#c07a11}.ur{color:#b32626}
+.result{min-height:180px;display:flex;flex-direction:column;justify-content:center}.rarity{font-size:46px;font-weight:900;letter-spacing:2px}.reward{font-size:20px;font-weight:800;margin-top:12px;line-height:1.45;overflow-wrap:anywhere}.rewardList{margin-top:10px;text-align:left}.rewardRow{display:grid;grid-template-columns:48px 42px 1fr;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line);font-size:14px}.rewardRow:last-child{border-bottom:0}.rewardRow .rno{color:var(--muted);font-size:12px}.rewardRow .rrarity{font-weight:900}.rewardRow .rtext{font-weight:700;overflow-wrap:anywhere}.rewardRow.eleven{background:#fffaf0;border-radius:8px}.rewardRow.eleven .rno{font-weight:800;color:#9a7110}.n{color:#555}.r{color:#4779bd}.sr{color:#7953a6}.ssr{color:#c07a11}.ur{color:#b32626}
 .spark{animation:pop .55s ease}.flash{animation:flash 1s ease}@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}@keyframes flash{0%,100%{filter:none}50%{filter:brightness(1.45)}}
 .batchSummary{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:14px}
 .batchItem{border:1px solid var(--line);border-radius:10px;padding:8px 3px;background:#fafbfc;text-align:center}
@@ -46,20 +46,20 @@
 
   <section class="gachas">
     <div class="card gacha red">
-      <div class="gtitle"><h2>🔴 赤がちゃ</h2><button class="more" id="redDetailBtn" aria-label="赤がちゃ詳細">⋯</button></div>
-      <div class="catch">さあ行こーか</div>
+      <div class="gtitle"><h2 id="redName">🔴 赤がちゃ</h2><button class="more" id="redDetailBtn" aria-label="赤がちゃ詳細">⋯</button></div>
+      <div class="catch" id="redComment">さあ行こーか</div>
       <div class="actions"><button id="red1">1連</button><button id="red10">10連＋1</button></div>
     </div>
     <div class="card gacha blue">
-      <div class="gtitle"><h2>🔵 青がちゃ</h2><button class="more" id="blueDetailBtn" aria-label="青がちゃ詳細">⋯</button></div>
-      <div class="catch">まだあわてるような時間じゃない</div>
+      <div class="gtitle"><h2 id="blueName">🔵 青がちゃ</h2><button class="more" id="blueDetailBtn" aria-label="青がちゃ詳細">⋯</button></div>
+      <div class="catch" id="blueComment">まだあわてるような時間じゃない</div>
       <div class="actions"><button id="blue1">1連</button><button id="blue10">10連＋1</button></div>
     </div>
   </section>
 
   <section class="links">
     <button id="historyBtn">📜 ガチャ履歴</button><button id="statsBtn">📊 レアリティ集計</button>
-    <button id="moneyBtn">💰 獲得金額</button><button id="adminBtn">⚙ 管理</button>
+    <button id="adminBtn" style="grid-column:1/-1">⚙ 管理</button>
   </section>
 
   <section id="detail" class="card detail"></section>
@@ -93,105 +93,16 @@ const ADMIN_PASSWORD = "takken261018";
 const KEY="takken_gacha_v2";
 const OLD_KEY="takken_gacha_v1";
 
-const DEFAULT_TABLES={
-  red:[["N",0,72],["R",500,20],["SR",1000,5],["SSR",4000,2],["UR",10000,1]],
-  blue:[["N",100,30],["R",300,35],["SR",500,20],["SSR",1000,10],["UR",2000,5]],
-  redBonus:[["N",0,70],["R",500,20],["SR",1000,5],["SSR",4000,3],["UR",10000,2]],
-  blueBonus:[["N",100,5],["R",300,15],["SR",500,20],["SSR",1000,20],["UR",2000,40]]
-};
-
-const defaults={
-  tickets:0,todayStudy:0,totalStudy:0,lastStudyDate:"",
-  history:[],winnings:0,examDate:"2026-10-18",
-  tables:structuredClone(DEFAULT_TABLES)
-};
+const DEFAULT_TABLES={red:[["N","今日は早く寝る",72],["R","お菓子を1つ買う",20],["SR","ゲーム30分延長",5],["SSR","映画を1本観る",2],["UR","好きなことをする",1]],blue:[["N","コーヒーを飲む",30],["R","好きな音楽を聴く",35],["SR","動画30分解禁",20],["SSR","お菓子を1つ買う",10],["UR","好きなことをする",5]],redBonus:[["N","今日は早く寝る",70],["R","お菓子を1つ買う",20],["SR","ゲーム30分延長",5],["SSR","映画を1本観る",3],["UR","好きなことをする",2]],blueBonus:[["N","コーヒーを飲む",5],["R","好きな音楽を聴く",15],["SR","動画30分解禁",20],["SSR","お菓子を1つ買う",20],["UR","好きなことをする",40]]};
+const DEFAULT_GACHAS={red:{name:"赤がちゃ",comment:"さあ行こーか"},blue:{name:"青がちゃ",comment:"まだあわてるような時間じゃない"}};
+const defaults={tickets:0,todayStudy:0,totalStudy:0,lastStudyDate:"",history:[],examDate:"2026-10-18",tables:structuredClone(DEFAULT_TABLES),gachas:structuredClone(DEFAULT_GACHAS)};
 
 function clone(v){return structuredClone(v)}
 
-function decodeTables(tables){
-  const src=tables||{};
-  const out={};
-  for(const key of Object.keys(DEFAULT_TABLES)){
-    const v=src[key];
-    if(Array.isArray(v)){
-      // Firestore-safe format: [{rarity, amount, probability}, ...]
-      // Legacy/local format: [["N",0,72], ...]
-      out[key]=v.map(x=>{
-        if(Array.isArray(x)){
-          return [x[0], Number(x[1])||0, Number(x[2])||0];
-        }
-        if(x && typeof x==="object"){
-          return [x.rarity, Number(x.amount)||0, Number(x.probability)||0];
-        }
-        return null;
-      }).filter(Boolean);
-    }else if(v && typeof v==="object"){
-      const vals=Object.keys(v).sort((a,b)=>Number(a)-Number(b)).map(k=>v[k]);
-      out[key]=vals.map(x=>Array.isArray(x)
-        ? [x[0],Number(x[1])||0,Number(x[2])||0]
-        : [x.rarity,Number(x.amount)||0,Number(x.probability)||0]);
-    }
-  }
-  return out;
-}
-
-function encodeTables(tables){
-  const out={};
-  for(const key of Object.keys(DEFAULT_TABLES)){
-    out[key]=(tables[key]||[]).map(x=>({
-      rarity:String(x[0]),
-      amount:Number(x[1])||0,
-      probability:Number(x[2])||0
-    }));
-  }
-  return out;
-}
-
-function toFirestoreState(s){
-  const x=clone(s);
-  x.tables=encodeTables(s.tables);
-  // Firestore rejects undefined values. Normalize history records explicitly.
-  x.history=(Array.isArray(s.history)?s.history:[]).map(h=>({
-    time:String(h.time||""),
-    dateKey:String(h.dateKey||""),
-    type:String(h.type||""),
-    drawNo:Number(h.drawNo)||0,
-    rarity:String(h.rarity||"N"),
-    amount:Number(h.amount)||0,
-    paid:Boolean(h.paid)
-  }));
-  x.tickets=Number(s.tickets)||0;
-  x.todayStudy=Number(s.todayStudy)||0;
-  x.totalStudy=Number(s.totalStudy)||0;
-  x.winnings=Number(s.winnings)||0;
-  x.examDate=String(s.examDate||"2026-10-18");
-  x.lastStudyDate=String(s.lastStudyDate||"");
-  return x;
-}
-
-function normalizeState(s){
-  const raw=clone(s||{});
-  const decodedTables=decodeTables(raw.tables);
-  delete raw.tables;
-  const x={...clone(defaults),...raw};
-  x.history=Array.isArray(x.history)?x.history:[];
-  x.tables={...clone(DEFAULT_TABLES),...decodedTables};
-  for(const k of Object.keys(DEFAULT_TABLES)){
-    const table=x.tables[k];
-    const valid=Array.isArray(table)&&table.length===5&&
-      table.every(row=>Array.isArray(row)&&row.length>=3&&
-        typeof row[0]==="string"&&row[0]&&row[0]!=="undefined"&&
-        Number.isFinite(Number(row[1]))&&Number.isFinite(Number(row[2])))&&
-      Math.abs(table.reduce((sum,row)=>sum+Number(row[2]),0)-100)<0.001;
-    if(!valid)x.tables[k]=clone(DEFAULT_TABLES[k]);
-  }
-  x.tickets=Math.max(0,Number(x.tickets)||0);
-  x.todayStudy=Math.max(0,Number(x.todayStudy)||0);
-  x.totalStudy=Math.max(0,Number(x.totalStudy)||0);
-  x.winnings=Math.max(0,Number(x.winnings)||0);
-  x.examDate=x.examDate||"2026-10-18";
-  return x;
-}
+function decodeTables(tables){const out={};for(const key of Object.keys(DEFAULT_TABLES)){const v=(tables||{})[key];if(Array.isArray(v))out[key]=v.map(x=>Array.isArray(x)?[String(x[0]||""),String(x[1]??""),Number(x[2])||0]:x&&typeof x==="object"?[String(x.rarity||""),String(x.reward??x.bonus??x.amount??""),Number(x.probability)||0]:null).filter(Boolean);else if(v&&typeof v==="object")out[key]=Object.keys(v).sort((a,b)=>Number(a)-Number(b)).map(k=>v[k]).map(x=>Array.isArray(x)?[String(x[0]||""),String(x[1]??""),Number(x[2])||0]:[String(x.rarity||""),String(x.reward??x.bonus??x.amount??""),Number(x.probability)||0]);}return out;}
+function encodeTables(tables){const out={};for(const key of Object.keys(DEFAULT_TABLES))out[key]=(tables[key]||[]).map(x=>({rarity:String(x[0]||""),reward:String(x[1]||""),probability:Number(x[2])||0}));return out;}
+function toFirestoreState(s){const x=clone(s);x.tables=encodeTables(s.tables);x.gachas={...clone(DEFAULT_GACHAS),...(s.gachas||{})};for(const k of ["red","blue"]){x.gachas[k]={name:String(x.gachas[k]?.name||DEFAULT_GACHAS[k].name).slice(0,30),comment:String(x.gachas[k]?.comment||DEFAULT_GACHAS[k].comment).slice(0,30)}}x.history=(Array.isArray(s.history)?s.history:[]).map(h=>({time:String(h.time||""),dateKey:String(h.dateKey||""),type:String(h.type||""),drawNo:Number(h.drawNo)||0,rarity:String(h.rarity||"N"),reward:String(h.reward??h.bonus??"").slice(0,12),paid:Boolean(h.paid)}));x.tickets=Number(s.tickets)||0;x.todayStudy=Number(s.todayStudy)||0;x.totalStudy=Number(s.totalStudy)||0;x.examDate=String(s.examDate||"2026-10-18");x.lastStudyDate=String(s.lastStudyDate||"");return x;}
+function normalizeState(s){const raw=clone(s||{});const sourceTables=raw.tables||{};const legacyAmountFormat=Object.values(sourceTables).some(v=>Array.isArray(v)&&v.some(x=>x&&typeof x==="object"&&!Array.isArray(x)&&Object.prototype.hasOwnProperty.call(x,"amount")&&!Object.prototype.hasOwnProperty.call(x,"reward")));const decodedTables=legacyAmountFormat?{}:decodeTables(raw.tables);delete raw.tables;delete raw.winnings;const x={...clone(defaults),...raw};x.history=Array.isArray(x.history)?x.history.map(h=>({...h,reward:String(h.reward??h.bonus??"").slice(0,12)})):[];x.tables={...clone(DEFAULT_TABLES),...decodedTables};for(const k of Object.keys(DEFAULT_TABLES)){const t=x.tables[k];const valid=Array.isArray(t)&&t.length===5&&t.every(r=>Array.isArray(r)&&r.length>=3&&r[0]&&r[0]!=="undefined"&&typeof r[1]==="string"&&r[1].length<=12&&Number.isFinite(Number(r[2])))&&Math.abs(t.reduce((a,r)=>a+Number(r[2]),0)-100)<.001;if(!valid)x.tables[k]=clone(DEFAULT_TABLES[k]);}x.gachas={...clone(DEFAULT_GACHAS),...(x.gachas||{})};for(const k of ["red","blue"]){x.gachas[k]={name:String(x.gachas[k]?.name||DEFAULT_GACHAS[k].name).slice(0,30),comment:String(x.gachas[k]?.comment||DEFAULT_GACHAS[k].comment).slice(0,30)}}x.tickets=Math.max(0,Number(x.tickets)||0);x.todayStudy=Math.max(0,Number(x.todayStudy)||0);x.totalStudy=Math.max(0,Number(x.totalStudy)||0);x.examDate=x.examDate||"2026-10-18";return x;}
 
 function readLocalSeed(){
   let s=null;
@@ -220,15 +131,10 @@ function dateKeyFromStored(s){
 function examDate(){
   return new Date(`${state.examDate||"2026-10-18"}T00:00:00+09:00`);
 }
-function yen(n){return Number(n||0).toLocaleString("ja-JP")+"円"}
 function fmt(min){return `${Math.floor(min/60)}時間${min%60}分`}
 function getTodayHistory(){const d=jpDateKey();return state.history.filter(x=>(x.dateKey||dateKeyFromStored(x.time))===d)}
-function getPaidDrawCount(){return state.history.reduce((sum,x)=>sum+(x.paid?1:0),0)}
-function getPaidDrawCountToday(){return getTodayHistory().reduce((sum,x)=>sum+(x.paid?1:0),0)}
 function getDrawCount(){return state.history.length}
 function getDrawCountToday(){return getTodayHistory().length}
-function getPaidAmount(){return getPaidDrawCount()*500}
-function getPaidAmountToday(){return getPaidDrawCountToday()*500}
 function weighted(t){
   const arr=Array.isArray(t)?t:[];
   const normalized=arr.map(x=>{
@@ -258,6 +164,7 @@ function setCloudStatus(text){
 }
 
 function render(){
+  document.getElementById("redName").textContent="🔴 "+state.gachas.red.name;document.getElementById("redComment").textContent=state.gachas.red.comment;document.getElementById("blueName").textContent="🔵 "+state.gachas.blue.name;document.getElementById("blueComment").textContent=state.gachas.blue.comment;
   document.getElementById("tickets").textContent=state.tickets+"枚";
   document.getElementById("todayStudy").textContent=state.todayStudy+"分";
   document.getElementById("totalStudy").textContent=fmt(state.totalStudy);
@@ -323,37 +230,8 @@ async function updateCloud(mutator){
   return state;
 }
 
-document.getElementById("studyBtn").onclick=()=>openModal(`<h2>30分勉強お疲れ様です。</h2><p>勉強時間を記録しますか？</p><div class="modalBtns"><button class="cancel" id="studyNo">いいえ</button><button class="ok" id="studyYes">はい</button></div>`);
-
-document.addEventListener("click",async e=>{
-  if(e.target.id==="studyNo")closeModal();
-  if(e.target.id==="studyYes"){
-    try{
-      const before=state.todayStudy;
-      await updateCloud(s=>{
-        const d=jpDateKey();
-        if(s.lastStudyDate!==d){s.todayStudy=0;s.lastStudyDate=d}
-        if(s.todayStudy<600){
-          s.todayStudy+=30;s.totalStudy+=30;s.tickets+=1;
-        }
-        return s;
-      });
-      if(before>=600 || state.todayStudy===0){
-        openModal(`<h2>本日の上限です</h2><p>今日は最大10枚まで獲得できます。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
-      }else{
-        openModal(`<div class="result"><div class="rarity">🎫</div><div class="amount">がちゃ回数券 1枚獲得！</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`);
-      }
-    }catch(err){
-      console.error(err);
-      openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><p style="font-size:12px;text-align:left;word-break:break-word;background:#111;padding:10px;border-radius:8px;">${escapeHtml((err && (err.code || err.message)) ? ((err.code||"") + " " + (err.message||"")) : String(err))}</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
-    }
-  }
-  if(e.target.id==="modalCloseBtn")closeModal();
-  if(e.target.id==="login"){
-    if(document.getElementById("pw").value===ADMIN_PASSWORD){closeModal();showAdmin()}
-    else openModal(`<h2>パスワードが違います</h2><button class="singleBtn" id="modalCloseBtn">OK</button>`);
-  }
-});
+document.getElementById("studyBtn").onclick=()=>openStudyModal();
+function openStudyModal(){openModal(`<h2>勉強時間を記録</h2><p>30分単位でまとめて記録できます。</p><div style="font-size:32px;font-weight:900;margin:14px 0" id="studyAmount">30分</div><div class="modalBtns"><button class="cancel" id="studyMinus">−30分</button><button class="ok" id="studyPlus">＋30分</button></div><p id="studyTickets" style="margin:12px 0 0">🎫 獲得：1枚</p><div class="modalBtns"><button class="cancel" id="studyNo">やめる</button><button class="ok" id="studyYes">記録する</button></div>`);let mins=30;const update=()=>{document.getElementById("studyAmount").textContent=fmt(mins);document.getElementById("studyTickets").textContent=`🎫 獲得：${mins/30}枚`;document.getElementById("studyMinus").disabled=mins<=30};document.getElementById("studyMinus").onclick=()=>{mins=Math.max(30,mins-30);update()};document.getElementById("studyPlus").onclick=()=>{mins+=30;update()};document.getElementById("studyNo").onclick=closeModal;document.getElementById("studyYes").onclick=async()=>{try{await updateCloud(s=>{const d=jpDateKey();if(s.lastStudyDate!==d){s.todayStudy=0;s.lastStudyDate=d}s.todayStudy+=mins;s.totalStudy+=mins;s.tickets+=mins/30;return s});openModal(`<div class="result"><div class="rarity">🎫</div><div class="reward">がちゃ回数券${mins/30}枚獲得！</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`)}catch(err){console.error(err);openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`)}}}
 
 function confirmDraw(type,count){
   if(state.tickets<count)return;
@@ -374,16 +252,15 @@ async function doDraw(type,count){
       const results=[];
       for(let i=0;i<count;i++){
         const x=weighted(s.tables[type]);
-        results.push({rarity:x[0],amount:Number(x[1]),drawNo:i+1,paid:true});
+        results.push({rarity:x[0],reward:String(x[1]||"").slice(0,12),drawNo:i+1,paid:true});
       }
       if(count===10){
         const x=weighted(s.tables[type+"Bonus"]);
-        results.push({rarity:x[0],amount:Number(x[1]),drawNo:11,paid:false});
+        results.push({rarity:x[0],reward:String(x[1]||"").slice(0,12),drawNo:11,paid:false});
       }
       s.tickets-=count;
       results.forEach(x=>{
-        s.history.push({time,dateKey,type,drawNo:x.drawNo,rarity:x.rarity,amount:x.amount,paid:x.paid});
-        s.winnings+=x.amount;
+        s.history.push({time,dateKey,type,drawNo:x.drawNo,rarity:x.rarity,reward:x.reward,paid:x.paid});
       });
       tx.set(STATE_REF,toFirestoreState(s));
       return {state:s,results};
@@ -406,28 +283,7 @@ async function doDraw(type,count){
   }
 }
 
-function showResults(rs,i){
-  if(i>=rs.length){
-    if(rs.length===11){
-      const total=rs.reduce((a,x)=>a+x.amount,0);
-      const items=rs.map((x,idx)=>`<div class="batchItem ${idx===10?"eleven":""}">
-        <div class="num">${idx+1}回目</div>
-        <div class="rar ${x.rarity.toLowerCase()}">${x.rarity}</div>
-        <div class="amt">${yen(x.amount)}</div>
-      </div>`).join("");
-      openModal(`<h2>10連＋1 結果</h2><div class="batchSummary">${items}</div><div class="summaryTotal"><span>11回合計</span><span>${yen(total)}</span></div><button class="singleBtn" id="modalCloseBtn">閉じる</button>`);
-      return;
-    }
-    closeModal();return;
-  }
-  const x=rs[i], cls=x.rarity.toLowerCase();
-  openModal(`<div class="result ${x.rarity==="UR"?"flash":""}"><div style="font-size:13px;color:#777">${rs.length===11?x.drawNo+"回目":""}</div><div class="rarity ${cls} spark">${x.rarity}</div><div class="amount">${yen(x.amount)}</div></div>`);
-  const b=document.createElement("button");
-  b.className="singleBtn";
-  b.textContent=i===rs.length-1?"結果一覧を見る":"次へ";
-  b.onclick=()=>showResults(rs,i+1);
-  document.getElementById("modalBody").appendChild(b);
-}
+function showResults(rs,i){if(rs.length===11){const items=rs.map((x,idx)=>`<div class="rewardRow ${idx===10?"eleven":""}"><div class="rno">${idx+1}回目</div><div class="rrarity ${x.rarity.toLowerCase()}">${x.rarity}</div><div class="rtext">${escapeHtml(x.reward)}</div></div>`).join("");openModal(`<h2>10連＋1 結果</h2><div class="rewardList">${items}</div><button class="singleBtn" id="modalCloseBtn">閉じる</button>`);return}if(i>=rs.length){closeModal();return}const x=rs[i],cls=x.rarity.toLowerCase();openModal(`<div class="result ${x.rarity==="UR"?"flash":""}"><div class="rarity ${cls} spark">${x.rarity}</div><div class="reward">${escapeHtml(x.reward)}</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`)}
 
 document.getElementById("red1").onclick=()=>confirmDraw("red",1);
 document.getElementById("blue1").onclick=()=>confirmDraw("blue",1);
@@ -438,100 +294,13 @@ function detail(html){
   const d=document.getElementById("detail");d.innerHTML=html;d.classList.add("open");
   document.getElementById("admin").classList.remove("open");
 }
-function tableHtml(type,title){
-  return `<h3>${title}</h3><table class="probtable"><thead><tr><th>レアリティ</th><th>金額</th><th>排出確率</th></tr></thead><tbody>
-  ${state.tables[type].map(x=>`<tr><td>${x[0]}</td><td>${yen(x[1])}</td><td>${x[2]}%</td></tr>`).join("")}</tbody></table>
-  <div class="note">※表示しているのは通常の1連の排出確率です。10連＋1の11回目は別設定です。</div>`;
-}
-document.getElementById("redDetailBtn").onclick=()=>detail(tableHtml("red","🔴 赤がちゃ 詳細"));
-document.getElementById("blueDetailBtn").onclick=()=>detail(tableHtml("blue","🔵 青がちゃ 詳細"));
+function tableHtml(type,title){return `<h3>${title}</h3><table class="probtable"><thead><tr><th>レアリティ</th><th>ごほうび</th><th>排出確率</th></tr></thead><tbody>${state.tables[type].map(x=>`<tr><td>${escapeHtml(x[0])}</td><td>${escapeHtml(x[1])}</td><td>${x[2]}%</td></tr>`).join("")}</tbody></table><div class="note">※表示しているのは通常の1連の排出確率です。10連＋1の11回目は別設定です。</div>`}
+document.getElementById("redDetailBtn").onclick=()=>detail(tableHtml("red","🔴 "+state.gachas.red.name+" 詳細"));document.getElementById("blueDetailBtn").onclick=()=>detail(tableHtml("blue","🔵 "+state.gachas.blue.name+" 詳細"));
+document.getElementById("historyBtn").onclick=()=>{let h=state.history.slice().reverse().map(x=>`<div class="row"><span>${x.time}<br>${x.type==="red"?"🔴":"🔵"} ${x.drawNo}回目・${x.rarity}${x.paid===false?"（11回目）":""}<br>${escapeHtml(x.reward||"")}</span></div>`).join("");detail(`<h3>📜 ガチャ履歴</h3><div class="history">${h||'<div class="empty">まだ履歴はありません。</div>'}</div>`)};document.getElementById("statsBtn").onclick=()=>{let r={N:0,R:0,SR:0,SSR:0,UR:0};state.history.forEach(x=>{if(r[x.rarity]!==undefined)r[x.rarity]++});detail(`<h3>📊 レアリティ集計</h3><div class="row"><span>合計で引いた回数</span><b>${getDrawCount()}回</b></div>${Object.entries(r).map(([k,v])=>`<div class="row"><span>${k}</span><b>${v}回</b></div>`).join("")}`)};
 
-document.getElementById("historyBtn").onclick=()=>{
-  let h=state.history.slice().reverse().map(x=>`<div class="row"><span>${x.time}<br>${x.type==="red"?"🔴":"🔵"} ${x.drawNo}回目・${x.rarity}${x.paid===false?"（11回目）":""}</span><b>${yen(x.amount)}</b></div>`).join("");
-  detail(`<h3>📜 ガチャ履歴</h3><div class="history">${h||'<div class="empty">まだ履歴はありません。</div>'}</div>`);
-};
-document.getElementById("statsBtn").onclick=()=>{
-  let r={N:0,R:0,SR:0,SSR:0,UR:0};state.history.forEach(x=>r[x.rarity]++);
-  detail(`<h3>📊 レアリティ集計</h3><div class="row"><span>合計で引いた回数</span><b>${getDrawCount()}回</b></div>
-  ${Object.entries(r).map(([k,v])=>`<div class="row"><span>${k}</span><b>${v}回</b></div>`).join("")}`);
-};
-document.getElementById("moneyBtn").onclick=()=>{
-  const th=getTodayHistory(),tw=th.reduce((a,x)=>a+x.amount,0);
-  detail(`<h3>💰 獲得金額</h3>
-    <div class="card" style="margin-top:10px;border-left:5px solid #555"><h3 style="margin:0 0 8px">📅 今日</h3>
-      <div class="row"><span>獲得金額</span><b>${yen(tw)}</b></div><div class="row"><span>引いた回数</span><b>${getDrawCountToday()}回</b></div><div class="row"><span>回数券代</span><b>${yen(getPaidAmountToday())}</b></div>
-    </div>
-    <div class="card" style="margin-top:10px;border-left:5px solid #3975c8"><h3 style="margin:0 0 8px">📚 累計</h3>
-      <div class="row"><span>獲得金額</span><b>${yen(state.winnings)}</b></div><div class="row"><span>引いた回数</span><b>${getDrawCount()}回</b></div><div class="row"><span>回数券代</span><b>${yen(getPaidAmount())}</b></div>
-    </div>`);
-};
-
-document.getElementById("adminBtn").onclick=()=>openModal(`<h2>🔐 管理</h2><p>管理パスワードを入力してください。</p><input id="pw" type="password" autocomplete="off"><div class="modalBtns"><button class="cancel" id="adminCancel">キャンセル</button><button class="ok" id="login">入室</button></div>`);
-document.addEventListener("click",e=>{if(e.target.id==="adminCancel")closeModal()});
-
-function tableEditor(key,label){
-  return `<div class="sectionTitle">${label}</div><div class="probedit" style="font-size:12px;color:#737982"><span>レア</span><span>金額</span><span>確率(%)</span></div>
-  ${state.tables[key].map((x,i)=>`<div class="probedit"><span><b>${x[0]}</b></span><input type="number" min="0" id="${key}_amt_${i}" value="${x[1]}"><input type="number" min="0" max="100" step="0.1" id="${key}_p_${i}" value="${x[2]}"></div>`).join("")}
-  <div class="note">確率合計は100%にしてください。</div>`;
-}
-
-function showAdmin(){
-  const a=document.getElementById("admin");a.classList.add("open");document.getElementById("detail").classList.remove("open");
-  a.innerHTML=`<h3>⚙ 管理画面</h3>
-    <label>ガチャ可能回数</label><input id="aTickets" type="number" min="0" value="${state.tickets}">
-    <label>今日の勉強時間（分）</label><input id="aToday" type="number" min="0" value="${state.todayStudy}">
-    <label>累計勉強時間（分）</label><input id="aTotal" type="number" min="0" value="${state.totalStudy}">
-    <label>試験日</label><input id="aExam" type="date" value="${state.examDate}">
-    ${tableEditor("red","🔴 赤がちゃ 通常")}${tableEditor("blue","🔵 青がちゃ 通常")}
-    ${tableEditor("redBonus","🔴 赤がちゃ 11回目")}${tableEditor("blueBonus","🔵 青がちゃ 11回目")}
-    <div class="adminGrid"><button class="smallbtn" id="adminSave">修正を保存</button><button class="smallbtn" id="adminClose">閉じる</button></div>
-    <hr><p style="font-size:12px;color:#777">※確率は管理画面でのみ変更できます。通常画面の詳細には通常1連の確率のみ表示します。</p>
-    <button class="smallbtn danger" id="reset">全データ初期化</button>`;
-  document.getElementById("adminSave").onclick=async()=>{
-    const next=clone(state);
-    next.tickets=Math.max(0,+document.getElementById("aTickets").value||0);
-    next.todayStudy=Math.max(0,+document.getElementById("aToday").value||0);
-    next.totalStudy=Math.max(0,+document.getElementById("aTotal").value||0);
-    next.examDate=document.getElementById("aExam").value||"2026-10-18";
-    const keys=["red","blue","redBonus","blueBonus"];
-    for(const key of keys){
-      let sum=0;
-      for(let i=0;i<next.tables[key].length;i++){
-        const amt=Math.max(0,+document.getElementById(`${key}_amt_${i}`).value||0);
-        const p=Math.max(0,+document.getElementById(`${key}_p_${i}`).value||0);
-        next.tables[key][i][1]=amt;next.tables[key][i][2]=p;sum+=p;
-      }
-      if(Math.abs(sum-100)>0.001){
-        openModal(`<h2>確率を確認してください</h2><p>${key}の確率合計が <b>${sum}%</b> です。<br>100%になるよう修正してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
-        return;
-      }
-    }
-    try{
-      await updateCloud(()=>next);
-      showAdmin();
-    }catch(err){
-      console.error(err);
-      openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><p style="font-size:12px;text-align:left;word-break:break-word;background:#111;padding:10px;border-radius:8px;">${escapeHtml((err && (err.code || err.message)) ? ((err.code||"") + " " + (err.message||"")) : String(err))}</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
-    }
-  };
-  document.getElementById("adminClose").onclick=()=>a.classList.remove("open");
-  document.getElementById("reset").onclick=async()=>{
-    if(confirm("全データを初期化します。よろしいですか？")){
-      if(confirm("本当に削除しますか？")){
-        try{
-          await deleteDoc(STATE_REF);
-          localStorage.removeItem(KEY);localStorage.removeItem(OLD_KEY);
-          state=clone(defaults);cloudReady=false;
-          await ensureCloudState();
-          render();showAdmin();
-        }catch(err){
-          console.error(err);
-          openModal(`<h2>初期化できませんでした</h2><p>Firebaseへの接続を確認してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
-        }
-      }
-    }
-  };
-}
+document.getElementById("adminBtn").onclick=()=>openModal(`<h2>🔐 管理</h2><p>管理パスワードを入力してください。</p><input id="pw" type="password" autocomplete="off"><div class="modalBtns"><button class="cancel" id="adminCancel">キャンセル</button><button class="ok" id="login">入室</button></div>`);document.addEventListener("click",e=>{if(e.target.id==="adminCancel")closeModal()});
+function tableEditor(key,label){return `<div class="sectionTitle">${label}</div><div class="probedit" style="font-size:12px;color:#737982"><span>レア</span><span>ごほうび</span><span>確率(%)</span></div>${state.tables[key].map((x,i)=>`<div class="probedit"><span><b>${x[0]}</b></span><input maxlength="12" id="${key}_r_${i}" value="${escapeHtml(x[1])}" placeholder="最大12文字"><input type="number" min="0" max="100" step="0.1" id="${key}_p_${i}" value="${x[2]}"></div>`).join("")}<div class="note">ごほうびは最大12文字。確率合計は100%にしてください。</div>`}
+function showAdmin(){const a=document.getElementById("admin");a.classList.add("open");document.getElementById("detail").classList.remove("open");a.innerHTML=`<h3>⚙ 管理画面</h3><label>ガチャ可能回数</label><input id="aTickets" type="number" min="0" value="${state.tickets}"><label>今日の勉強時間（分）</label><input id="aToday" type="number" min="0" value="${state.todayStudy}"><label>累計勉強時間（分）</label><input id="aTotal" type="number" min="0" value="${state.totalStudy}"><label>試験日</label><input id="aExam" type="date" value="${state.examDate}"><div class="sectionTitle">🔴 赤がちゃ 表示設定</div><label>ガチャ名（最大30文字）</label><input id="redNameEdit" maxlength="30" value="${escapeHtml(state.gachas.red.name)}"><label>コメント（最大30文字）</label><input id="redCommentEdit" maxlength="30" value="${escapeHtml(state.gachas.red.comment)}"><div class="sectionTitle">🔵 青がちゃ 表示設定</div><label>ガチャ名（最大30文字）</label><input id="blueNameEdit" maxlength="30" value="${escapeHtml(state.gachas.blue.name)}"><label>コメント（最大30文字）</label><input id="blueCommentEdit" maxlength="30" value="${escapeHtml(state.gachas.blue.comment)}">${tableEditor("red","🔴 赤がちゃ 通常")}${tableEditor("blue","🔵 青がちゃ 通常")}${tableEditor("redBonus","🔴 赤がちゃ 11回目")}${tableEditor("blueBonus","🔵 青がちゃ 11回目")}<div class="adminGrid"><button class="smallbtn" id="adminSave">修正を保存</button><button class="smallbtn" id="adminClose">閉じる</button></div><hr><p style="font-size:12px;color:#777">※通常画面の詳細には通常1連の排出確率のみ表示します。11回目の設定は管理画面でのみ確認できます。</p><button class="smallbtn danger" id="reset">全データ初期化</button>`;document.getElementById("adminSave").onclick=async()=>{const next=clone(state);next.tickets=Math.max(0,+document.getElementById("aTickets").value||0);next.todayStudy=Math.max(0,+document.getElementById("aToday").value||0);next.totalStudy=Math.max(0,+document.getElementById("aTotal").value||0);next.examDate=document.getElementById("aExam").value||"2026-10-18";next.gachas.red={name:document.getElementById("redNameEdit").value.slice(0,30),comment:document.getElementById("redCommentEdit").value.slice(0,30)};next.gachas.blue={name:document.getElementById("blueNameEdit").value.slice(0,30),comment:document.getElementById("blueCommentEdit").value.slice(0,30)};for(const key of ["red","blue","redBonus","blueBonus"]){let sum=0;for(let i=0;i<5;i++){const reward=document.getElementById(`${key}_r_${i}`).value.trim();const p=Math.max(0,+document.getElementById(`${key}_p_${i}`).value||0);if(reward.length>12){openModal(`<h2>文字数を確認してください</h2><p>${key}のごほうびは最大12文字です。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);return}next.tables[key][i][1]=reward;next.tables[key][i][2]=p;sum+=p}if(Math.abs(sum-100)>.001){openModal(`<h2>確率を確認してください</h2><p>${key}の確率合計が <b>${sum}%</b> です。<br>100%になるよう修正してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);return}}try{await updateCloud(()=>next);showAdmin()}catch(err){console.error(err);openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`)}};document.getElementById("adminClose").onclick=()=>a.classList.remove("open");document.getElementById("reset").onclick=async()=>{if(confirm("全データを初期化します。よろしいですか？")){if(confirm("本当に削除しますか？")){try{await deleteDoc(STATE_REF);localStorage.removeItem(KEY);localStorage.removeItem(OLD_KEY);state=clone(defaults);cloudReady=false;await ensureCloudState();render();showAdmin()}catch(err){console.error(err);openModal(`<h2>初期化できませんでした</h2><p>Firebaseへの接続を確認してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`)}}}}}
 
 (async function init(){
   render();
