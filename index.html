@@ -107,8 +107,46 @@ const defaults={
 };
 
 function clone(v){return structuredClone(v)}
+
+function decodeTables(tables){
+  const src=tables||{};
+  const out={};
+  for(const key of Object.keys(DEFAULT_TABLES)){
+    const v=src[key];
+    if(Array.isArray(v)){
+      // Legacy/local format: [["N",0,72], ...]
+      out[key]=v.map(x=>Array.isArray(x)?[x[0],Number(x[1])||0,Number(x[2])||0]:x);
+    }else if(v && typeof v==="object"){
+      // Firestore-safe format: [{rarity:"N",amount:0,probability:72}, ...]
+      const vals=Object.keys(v).sort((a,b)=>Number(a)-Number(b)).map(k=>v[k]);
+      out[key]=vals.map(x=>[x.rarity,Number(x.amount)||0,Number(x.probability)||0]);
+    }
+  }
+  return out;
+}
+
+function encodeTables(tables){
+  const out={};
+  for(const key of Object.keys(DEFAULT_TABLES)){
+    out[key]=(tables[key]||[]).map(x=>({
+      rarity:String(x[0]),
+      amount:Number(x[1])||0,
+      probability:Number(x[2])||0
+    }));
+  }
+  return out;
+}
+
+function toFirestoreState(s){
+  const x=clone(s);
+  x.tables=encodeTables(s.tables);
+  return x;
+}
+
 function normalizeState(s){
-  const x={...clone(defaults),...(s||{})};
+  const raw=clone(s||{});
+  raw.tables=decodeTables(raw.tables);
+  const x={...clone(defaults),...raw};
   x.history=Array.isArray(x.history)?x.history:[];
   x.tables={...clone(DEFAULT_TABLES),...(s?.tables||{})};
   for(const k of Object.keys(DEFAULT_TABLES)){
@@ -190,7 +228,7 @@ async function ensureCloudState(){
   const result=await runTransaction(db,async tx=>{
     const snap=await tx.get(STATE_REF);
     if(snap.exists())return snap.data();
-    tx.set(STATE_REF,seed);
+    tx.set(STATE_REF,toFirestoreState(seed));
     return seed;
   });
   state=normalizeState(result);
@@ -219,7 +257,7 @@ async function updateCloud(mutator){
     const snap=await tx.get(STATE_REF);
     const current=normalizeState(snap.exists()?snap.data():state);
     const updated=normalizeState(await mutator(current));
-    tx.set(STATE_REF,updated);
+    tx.set(STATE_REF,toFirestoreState(updated));
     return updated;
   });
   state=normalizeState(result);
@@ -290,7 +328,7 @@ async function doDraw(type,count){
         s.history.push({time,dateKey,type,drawNo:x.drawNo,rarity:x.rarity,amount:x.amount,paid:x.paid});
         s.winnings+=x.amount;
       });
-      tx.set(STATE_REF,s);
+      tx.set(STATE_REF,toFirestoreState(s));
       return {state:s,results};
     });
     state=normalizeState(result.state);
