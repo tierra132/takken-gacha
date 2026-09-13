@@ -179,6 +179,11 @@ function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":
 function openModal(html){document.getElementById("modalBody").innerHTML=html;document.getElementById("modal").classList.add("show")}
 function closeModal(){document.getElementById("modal").classList.remove("show");document.getElementById("modalBody").innerHTML=""}
 
+// 共通OKボタン：動的に生成されるモーダルにも確実に反応させる
+document.getElementById("modalBody").addEventListener("click",e=>{
+  if(e.target.id==="modalCloseBtn") closeModal();
+});
+
 async function ensureCloudState(){
   setCloudStatus("☁️ Firebase接続中…");
   const seed=readLocalSeed();
@@ -231,7 +236,25 @@ async function updateCloud(mutator){
 }
 
 document.getElementById("studyBtn").onclick=()=>openStudyModal();
-function openStudyModal(){openModal(`<h2>勉強時間を記録</h2><p>30分単位でまとめて記録できます。</p><div style="font-size:32px;font-weight:900;margin:14px 0" id="studyAmount">30分</div><div class="modalBtns"><button class="cancel" id="studyMinus">−30分</button><button class="ok" id="studyPlus">＋30分</button></div><p id="studyTickets" style="margin:12px 0 0">🎫 獲得：1枚</p><div class="modalBtns"><button class="cancel" id="studyNo">やめる</button><button class="ok" id="studyYes">記録する</button></div>`);let mins=30;const update=()=>{document.getElementById("studyAmount").textContent=fmt(mins);document.getElementById("studyTickets").textContent=`🎫 獲得：${mins/30}枚`;document.getElementById("studyMinus").disabled=mins<=30};document.getElementById("studyMinus").onclick=()=>{mins=Math.max(30,mins-30);update()};document.getElementById("studyPlus").onclick=()=>{mins+=30;update()};document.getElementById("studyNo").onclick=closeModal;document.getElementById("studyYes").onclick=async()=>{try{await updateCloud(s=>{const d=jpDateKey();if(s.lastStudyDate!==d){s.todayStudy=0;s.lastStudyDate=d}s.todayStudy+=mins;s.totalStudy+=mins;s.tickets+=mins/30;return s});openModal(`<div class="result"><div class="rarity">🎫</div><div class="reward">がちゃ回数券${mins/30}枚獲得！</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`)}catch(err){console.error(err);openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`)}}}
+function openStudyModal(){
+  openModal(`<h2>勉強時間を記録</h2><p>30分単位でまとめて記録できます。</p><div style="font-size:32px;font-weight:900;margin:14px 0" id="studyAmount">30分</div><div class="modalBtns"><button class="cancel" id="studyMinus">−30分</button><button class="ok" id="studyPlus">＋30分</button></div><p id="studyTickets" style="margin:12px 0 0">🎫 獲得：1枚</p><div class="modalBtns"><button class="cancel" id="studyNo">やめる</button><button class="ok" id="studyYes">記録する</button></div>`);
+  let mins=30;
+  const update=()=>{document.getElementById("studyAmount").textContent=fmt(mins);document.getElementById("studyTickets").textContent=`🎫 獲得：${mins/30}枚`;document.getElementById("studyMinus").disabled=mins<=30};
+  document.getElementById("studyMinus").onclick=()=>{mins=Math.max(30,mins-30);update()};
+  document.getElementById("studyPlus").onclick=()=>{mins+=30;update()};
+  document.getElementById("studyNo").onclick=closeModal;
+  document.getElementById("studyYes").onclick=async()=>{
+    const btn=document.getElementById("studyYes");
+    btn.disabled=true;
+    try{
+      await updateCloud(s=>{const d=jpDateKey();if(s.lastStudyDate!==d){s.todayStudy=0;s.lastStudyDate=d}s.todayStudy+=mins;s.totalStudy+=mins;s.tickets+=mins/30;return s});
+      openModal(`<div class="result"><div class="rarity">🎫</div><div class="reward">がちゃ回数券${mins/30}枚獲得！</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+    }catch(err){
+      console.error(err);
+      openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+    }
+  };
+}
 
 function confirmDraw(type,count){
   if(state.tickets<count)return;
@@ -283,7 +306,25 @@ async function doDraw(type,count){
   }
 }
 
-function showResults(rs,i){if(rs.length===11){const items=rs.map((x,idx)=>`<div class="rewardRow ${idx===10?"eleven":""}"><div class="rno">${idx+1}回目</div><div class="rrarity ${x.rarity.toLowerCase()}">${x.rarity}</div><div class="rtext">${escapeHtml(x.reward)}</div></div>`).join("");openModal(`<h2>10連＋1 結果</h2><div class="rewardList">${items}</div><button class="singleBtn" id="modalCloseBtn">閉じる</button>`);return}if(i>=rs.length){closeModal();return}const x=rs[i],cls=x.rarity.toLowerCase();openModal(`<div class="result ${x.rarity==="UR"?"flash":""}"><div class="rarity ${cls} spark">${x.rarity}</div><div class="reward">${escapeHtml(x.reward)}</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`)}
+function showResults(rs,i=0){
+  if(!Array.isArray(rs)||!rs.length){closeModal();return}
+  // 10連＋1は、まず1回ずつ結果を表示。最後に11個を縦一覧でまとめて表示。
+  if(rs.length===11){
+    if(i>=rs.length){
+      const items=rs.map((x,idx)=>`<div class="rewardRow ${idx===10?"eleven":""}"><div class="rno">${idx+1}回目</div><div class="rrarity ${x.rarity.toLowerCase()}">${escapeHtml(x.rarity)}</div><div class="rtext">${escapeHtml(x.reward)}</div></div>`).join("");
+      openModal(`<h2>10連＋1 結果</h2><div class="rewardList">${items}</div><button class="singleBtn" id="modalCloseBtn">閉じる</button>`);
+      return;
+    }
+    const x=rs[i],cls=x.rarity.toLowerCase();
+    const nextLabel=i===rs.length-1?"結果一覧を見る":"次へ";
+    openModal(`<div class="result ${x.rarity==="UR"?"flash":""}"><div class="rarity ${cls} spark">${escapeHtml(x.rarity)}</div><div class="reward">${escapeHtml(x.reward)}</div></div><button class="singleBtn" id="nextDrawResult">${nextLabel}</button>`);
+    document.getElementById("nextDrawResult").onclick=()=>showResults(rs,i+1);
+    return;
+  }
+  if(i>=rs.length){closeModal();return}
+  const x=rs[i],cls=x.rarity.toLowerCase();
+  openModal(`<div class="result ${x.rarity==="UR"?"flash":""}"><div class="rarity ${cls} spark">${escapeHtml(x.rarity)}</div><div class="reward">${escapeHtml(x.reward)}</div></div><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+}
 
 document.getElementById("red1").onclick=()=>confirmDraw("red",1);
 document.getElementById("blue1").onclick=()=>confirmDraw("blue",1);
