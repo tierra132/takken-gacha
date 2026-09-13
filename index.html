@@ -446,7 +446,7 @@ function showAdmin(){
     state=readLocalSeed();
     render();
     setCloudStatus("⚠️ Firebase接続エラー");
-    openModal(`<h2>Firebaseに接続できません</h2><p>一度ページを再読み込みして、それでも直らなければFirestoreのルール設定を確認しましょう。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+    openModal(`<h2>Firebaseに接続できません</h2><p>Firebaseから返されたエラーを確認してください。</p><p style="font-size:12px;text-align:left;word-break:break-word;background:#111;color:#fff;padding:10px;border-radius:8px;">${escapeHtml((err && (err.code || err.message)) ? ((err.code||"") + " " + (err.message||"")) : String(err))}</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
   }
 })();
 setInterval(()=>{if(cloudReady)refreshCloud().catch(console.error);},60000);
