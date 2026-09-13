@@ -179,6 +179,8 @@ function render(){
   ["red10","blue10"].forEach(id=>document.getElementById(id).disabled=state.tickets<10);
 }
 
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+
 function openModal(html){document.getElementById("modalBody").innerHTML=html;document.getElementById("modal").classList.add("show")}
 function closeModal(){document.getElementById("modal").classList.remove("show");document.getElementById("modalBody").innerHTML=""}
 
@@ -248,7 +250,7 @@ document.addEventListener("click",async e=>{
       }
     }catch(err){
       console.error(err);
-      openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続を確認してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+      openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><p style="font-size:12px;text-align:left;word-break:break-word;background:#111;padding:10px;border-radius:8px;">${escapeHtml((err && (err.code || err.message)) ? ((err.code||"") + " " + (err.message||"")) : String(err))}</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
     }
   }
   if(e.target.id==="modalCloseBtn")closeModal();
@@ -302,7 +304,7 @@ async function doDraw(type,count){
       await refreshCloud();
       openModal(`<h2>回数券が足りません</h2><p>別の端末で回数券が使われた可能性があります。最新の状態に更新しました。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
     }else{
-      openModal(`<h2>ガチャを保存できませんでした</h2><p>Firebaseへの接続を確認してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+      openModal(`<h2>ガチャを保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><p style="font-size:12px;text-align:left;word-break:break-word;background:#111;padding:10px;border-radius:8px;">${escapeHtml((err && (err.code || err.message)) ? ((err.code||"") + " " + (err.message||"")) : String(err))}</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
     }
   }
 }
@@ -412,7 +414,7 @@ function showAdmin(){
       showAdmin();
     }catch(err){
       console.error(err);
-      openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続を確認してください。</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
+      openModal(`<h2>保存できませんでした</h2><p>Firebaseへの接続でエラーが発生しました。</p><p style="font-size:12px;text-align:left;word-break:break-word;background:#111;padding:10px;border-radius:8px;">${escapeHtml((err && (err.code || err.message)) ? ((err.code||"") + " " + (err.message||"")) : String(err))}</p><button class="singleBtn" id="modalCloseBtn">OK</button>`);
     }
   };
   document.getElementById("adminClose").onclick=()=>a.classList.remove("open");
