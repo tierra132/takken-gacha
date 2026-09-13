@@ -177,7 +177,13 @@ function normalizeState(s){
   x.history=Array.isArray(x.history)?x.history:[];
   x.tables={...clone(DEFAULT_TABLES),...decodedTables};
   for(const k of Object.keys(DEFAULT_TABLES)){
-    if(!Array.isArray(x.tables[k])||x.tables[k].length!==5)x.tables[k]=clone(DEFAULT_TABLES[k]);
+    const table=x.tables[k];
+    const valid=Array.isArray(table)&&table.length===5&&
+      table.every(row=>Array.isArray(row)&&row.length>=3&&
+        typeof row[0]==="string"&&row[0]&&row[0]!=="undefined"&&
+        Number.isFinite(Number(row[1]))&&Number.isFinite(Number(row[2])))&&
+      Math.abs(table.reduce((sum,row)=>sum+Number(row[2]),0)-100)<0.001;
+    if(!valid)x.tables[k]=clone(DEFAULT_TABLES[k]);
   }
   x.tickets=Math.max(0,Number(x.tickets)||0);
   x.todayStudy=Math.max(0,Number(x.todayStudy)||0);
@@ -288,11 +294,18 @@ async function refreshCloud(){
     await ensureCloudState();
     return;
   }
+  const before=JSON.stringify(snap.data().tables||null);
   state=normalizeState(snap.data());
+  const after=JSON.stringify(encodeTables(state.tables));
   cloudReady=true;
   cacheLocal();
   setCloudStatus("☁️ データ共有中");
   render();
+  // If the old Firebase data had the broken undefined/0 table format,
+  // repair it once using the intended default tables.
+  if(before!==after){
+    await updateCloud(()=>state);
+  }
 }
 
 async function updateCloud(mutator){
