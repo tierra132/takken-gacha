@@ -20,6 +20,13 @@
 .overlay{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.overlay.show{display:flex}.modal{width:min(460px,100%);max-height:90vh;overflow:auto;background:white;border-radius:18px;padding:22px;text-align:center}.modal h2{margin:0 0 10px}.modal p{color:var(--muted);line-height:1.6}.modal input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:16px}.modalBtns{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}.modalBtns button{border:0;border-radius:11px;padding:12px;font-weight:800}.ok{background:#242a31;color:white}.cancel{background:#edf0f2}.singleBtn{width:100%;margin-top:12px;border:0;border-radius:11px;padding:12px;font-weight:800;background:#242a31;color:white}
 .result{min-height:180px;display:flex;flex-direction:column;justify-content:center}.rarity{font-size:46px;font-weight:900;letter-spacing:2px}.amount{font-size:30px;font-weight:900;margin-top:8px}.n{color:#555}.r{color:#4779bd}.sr{color:#7953a6}.ssr{color:#c07a11}.ur{color:#b32626}
 .spark{animation:pop .55s ease}.flash{animation:flash 1s ease}@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}@keyframes flash{0%,100%{filter:none}50%{filter:brightness(1.45)}}
+.batchSummary{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:14px}
+.batchItem{border:1px solid var(--line);border-radius:10px;padding:8px 3px;background:#fafbfc;text-align:center}
+.batchItem .num{font-size:11px;color:var(--muted)}.batchItem .rar{font-size:17px;font-weight:900;margin-top:2px}.batchItem .amt{font-size:12px;font-weight:800;margin-top:2px}
+.batchItem.eleven{grid-column:3;border:2px solid var(--gold);background:#fffaf0}
+.batchItem.eleven .num{font-weight:800;color:#9a7110}
+.summaryTotal{margin-top:12px;padding:12px;border-radius:11px;background:#f3f5f7;display:flex;justify-content:space-between;font-weight:800}
+@media(max-width:430px){.batchSummary{gap:5px}.batchItem{padding:7px 2px}.batchItem .rar{font-size:15px}.batchItem .amt{font-size:10px}}
 .admin{display:none}.admin.open{display:block}.admin input,.admin select{width:100%;padding:11px;margin:5px 0 10px;border:1px solid var(--line);border-radius:9px}.admin label{font-size:12px;color:var(--muted)}.adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.danger{background:#a92b2b!important}.back{margin-top:10px}.probedit{display:grid;grid-template-columns:58px 1fr 85px;gap:7px;align-items:center;margin:5px 0}.probedit input{margin:0!important}.sectionTitle{font-weight:800;margin:18px 0 8px}
 @media(max-width:430px){.status{grid-template-columns:1fr 1fr}.stat .value{font-size:21px}}
 </style>
@@ -176,7 +183,22 @@ function doDraw(type,count){
 }
 
 function showResults(rs,i){
-  if(i>=rs.length){closeModal();return}
+  if(i>=rs.length){
+    if(rs.length===11){
+      const total=rs.reduce((a,x)=>a+x.amount,0);
+      const items=rs.map((x,idx)=>`<div class="batchItem ${idx===10?"eleven":""}">
+        <div class="num">${idx+1}回目</div>
+        <div class="rar ${x.rarity.toLowerCase()}">${x.rarity}</div>
+        <div class="amt">${yen(x.amount)}</div>
+      </div>`).join("");
+      openModal(`<h2>10連＋1 結果</h2>
+        <div class="batchSummary">${items}</div>
+        <div class="summaryTotal"><span>11回合計</span><span>${yen(total)}</span></div>
+        <button class="singleBtn" id="modalCloseBtn">閉じる</button>`);
+      return;
+    }
+    closeModal();return;
+  }
   const x=rs[i], cls=x.rarity.toLowerCase();
   openModal(`<div class="result ${x.rarity==="UR"?"flash":""}">
     <div style="font-size:13px;color:#777">${rs.length===11?x.drawNo+"回目":""}</div>
@@ -185,7 +207,7 @@ function showResults(rs,i){
   </div>`);
   const b=document.createElement("button");
   b.className="singleBtn";
-  b.textContent=i===rs.length-1?"閉じる":"次へ";
+  b.textContent=i===rs.length-1?"結果一覧を見る":"次へ";
   b.onclick=()=>showResults(rs,i+1);
   document.getElementById("modalBody").appendChild(b);
 }
@@ -220,12 +242,18 @@ document.getElementById("moneyBtn").onclick=()=>{
   const th=getTodayHistory();
   const tw=th.reduce((a,x)=>a+x.amount,0);
   detail(`<h3>💰 獲得金額</h3>
-    <div class="row"><span>今日の獲得金額</span><b>${yen(tw)}</b></div>
-    <div class="row"><span>今日引いた回数</span><b>${getDrawCountToday()}回</b></div>
-    <div class="row"><span>今日の回数券代</span><b>${yen(getPaidAmountToday())}</b></div>
-    <div class="row"><span>累計獲得金額</span><b>${yen(state.winnings)}</b></div>
-    <div class="row"><span>累計ガチャ回数</span><b>${getDrawCount()}回</b></div>
-    <div class="row"><span>累計回数券代</span><b>${yen(getPaidAmount())}</b></div>`);
+    <div class="card" style="margin-top:10px;border-left:5px solid #555">
+      <h3 style="margin:0 0 8px">📅 今日</h3>
+      <div class="row"><span>獲得金額</span><b>${yen(tw)}</b></div>
+      <div class="row"><span>引いた回数</span><b>${getDrawCountToday()}回</b></div>
+      <div class="row"><span>回数券代</span><b>${yen(getPaidAmountToday())}</b></div>
+    </div>
+    <div class="card" style="margin-top:10px;border-left:5px solid #3975c8">
+      <h3 style="margin:0 0 8px">📚 累計</h3>
+      <div class="row"><span>獲得金額</span><b>${yen(state.winnings)}</b></div>
+      <div class="row"><span>引いた回数</span><b>${getDrawCount()}回</b></div>
+      <div class="row"><span>回数券代</span><b>${yen(getPaidAmount())}</b></div>
+    </div>`);
 };
 
 document.getElementById("adminBtn").onclick=()=>openModal(`<h2>🔐 管理</h2><p>管理パスワードを入力してください。</p><input id="pw" type="password" autocomplete="off"><div class="modalBtns"><button class="cancel" id="adminCancel">キャンセル</button><button class="ok" id="login">入室</button></div>`);
