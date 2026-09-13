@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>宅建がちゃ</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#20242a;--muted:#737982;--line:#e2e5e9;--red:#c93434;--blue:#3975c8;--gold:#d59b18}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP","Yu Gothic",sans-serif}
+.app{max-width:720px;margin:auto;padding:18px 14px 36px}.head{text-align:center;margin:8px 0 18px}.head h1{font-size:30px;margin:0 0 4px}.head p{margin:0;color:var(--muted);font-size:13px}
+.status{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat,.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;box-shadow:0 2px 8px #00000008}.stat .label{font-size:12px;color:var(--muted)}.stat .value{font-size:24px;font-weight:800;margin-top:3px}
+.study{margin-top:10px}.study button,.adminbtn,.smallbtn{width:100%;border:0;border-radius:12px;padding:13px;font-weight:700;font-size:15px;background:#242a31;color:#fff}.study button:disabled{opacity:.45}
+.gachas{display:grid;gap:14px;margin-top:14px}.gacha{padding:17px}.gacha.red{border-top:5px solid var(--red)}.gacha.blue{border-top:5px solid var(--blue)}.gtitle{display:flex;justify-content:space-between;align-items:center}.gtitle h2{margin:0;font-size:22px}.catch{font-size:12px;color:var(--muted);margin:5px 0 13px}.actions{display:grid;grid-template-columns:1fr 1.25fr;gap:9px}.actions button{border:0;border-radius:12px;padding:13px 8px;color:white;font-weight:800;font-size:15px}.red .actions button{background:var(--red)}.blue .actions button{background:var(--blue)}.actions button:disabled{opacity:.3}
+.links{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.links button{background:white;border:1px solid var(--line);border-radius:12px;padding:12px;font-weight:700}
+.detail{display:none;margin-top:14px}.detail.open{display:block}.detail h3{margin:0 0 10px}.history{max-height:280px;overflow:auto}.row{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:9px 0;font-size:13px}.empty{color:var(--muted);padding:10px 0}
+.overlay{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.overlay.show{display:flex}.modal{width:min(460px,100%);background:white;border-radius:18px;padding:22px;text-align:center}.modal h2{margin:0 0 10px}.modal p{color:var(--muted);line-height:1.6}.modal input{width:100%;padding:13px;border:1px solid var(--line);border-radius:10px;font-size:16px}.modalBtns{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}.modalBtns button{border:0;border-radius:11px;padding:12px;font-weight:800}.ok{background:#242a31;color:white}.cancel{background:#edf0f2}.result{min-height:180px;display:flex;flex-direction:column;justify-content:center}.rarity{font-size:46px;font-weight:900;letter-spacing:2px}.amount{font-size:30px;font-weight:900;margin-top:8px}.n{color:#555}.r{color:#4779bd}.sr{color:#7953a6}.ssr{color:#c07a11}.ur{color:#b32626}.spark{animation:pop .55s ease}.flash{animation:flash 1s ease}@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}@keyframes flash{0%,100%{filter:none}50%{filter:brightness(1.45)}}
+.admin{display:none}.admin.open{display:block}.admin input,.admin select{width:100%;padding:11px;margin:5px 0 10px;border:1px solid var(--line);border-radius:9px}.admin label{font-size:12px;color:var(--muted)}.adminGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.danger{background:#a92b2b!important}.back{margin-top:10px}
+@media(max-width:430px){.status{grid-template-columns:1fr 1fr}.stat .value{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="head"><h1>宅建がちゃ</h1><p>30分勉強して、がちゃ回数券を1枚。</p></header>
+
+  <section class="status">
+    <div class="stat"><div class="label">🎫 ガチャ可能回数</div><div class="value" id="tickets">0枚</div></div>
+    <div class="stat"><div class="label">⏳ 試験まで</div><div class="value" id="countdown">--</div></div>
+    <div class="stat"><div class="label">📚 今日の勉強時間</div><div class="value" id="todayStudy">0分</div></div>
+    <div class="stat"><div class="label">📖 累計勉強時間</div><div class="value" id="totalStudy">0時間0分</div></div>
+  </section>
+
+  <section class="card study">
+    <button id="studyBtn">30分勉強したことを記録する</button>
+  </section>
+
+  <section class="gachas">
+    <div class="card gacha red">
+      <div class="gtitle"><h2>🔴 赤がちゃ</h2></div>
+      <div class="catch">さあ行こーか</div>
+      <div class="actions"><button id="red1">1連</button><button id="red10">10連＋1</button></div>
+    </div>
+    <div class="card gacha blue">
+      <div class="gtitle"><h2>🔵 青がちゃ</h2></div>
+      <div class="catch">まだあわてるような時間じゃない</div>
+      <div class="actions"><button id="blue1">1連</button><button id="blue10">10連＋1</button></div>
+    </div>
+  </section>
+
+  <section class="links">
+    <button id="historyBtn">📜 ガチャ履歴</button><button id="statsBtn">📊 レアリティ集計</button>
+    <button id="moneyBtn">💰 獲得金額</button><button id="adminBtn">⚙ 管理</button>
+  </section>
+
+  <section id="detail" class="card detail"></section>
+  <section id="admin" class="card admin"></section>
+</div>
+
+<div id="modal" class="overlay">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<script>
+const EXAM = new Date("2026-10-18T00:00:00+09:00");
+const ADMIN_PASSWORD = "takken261018";
+const KEY="takken_gacha_v1";
+const defaults={tickets:0,todayStudy:0,totalStudy:0,lastStudyDate:"",history:[],winnings:0};
+let state=JSON.parse(localStorage.getItem(KEY)||"null")||defaults;
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function dayReset(){let d=new Date().toISOString().slice(0,10);if(state.lastStudyDate!==d){state.todayStudy=0;state.lastStudyDate=d;save()}}
+dayReset();
+
+const tables={
+ red:[["N",0,72],["R",500,20],["SR",1000,5],["SSR",4000,2],["UR",10000,1]],
+ blue:[["N",100,30],["R",300,35],["SR",500,20],["SSR",1000,10],["UR",2000,5]],
+ redBonus:[["N",0,70],["R",500,20],["SR",1000,5],["SSR",4000,3],["UR",10000,2]],
+ blueBonus:[["N",100,5],["R",300,15],["SR",500,20],["SSR",1000,20],["UR",2000,40]]
+};
+function weighted(t){let r=Math.random()*100,s=0;for(const x of t){s+=x[2];if(r<s)return x}return t[t.length-1]}
+function yen(n){return n.toLocaleString("ja-JP")+"円"}
+function fmt(min){return `${Math.floor(min/60)}時間${min%60}分`}
+function render(){
+ dayReset();
+ document.getElementById("tickets").textContent=state.tickets+"枚";
+ document.getElementById("todayStudy").textContent=state.todayStudy+"分";
+ document.getElementById("totalStudy").textContent=fmt(state.totalStudy);
+ let now=new Date(), diff=EXAM-now;
+ if(diff<=0) document.getElementById("countdown").textContent="合格待ち";
+ else document.getElementById("countdown").textContent=Math.ceil(diff/86400000)+"日";
+ ["red1","blue1"].forEach(id=>document.getElementById(id).disabled=state.tickets<1);
+ ["red10","blue10"].forEach(id=>document.getElementById(id).disabled=state.tickets<10);
+}
+function openModal(html){document.getElementById("modalBody").innerHTML=html;document.getElementById("modal").classList.add("show")}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+document.getElementById("studyBtn").onclick=()=>openModal(`<h2>30分勉強お疲れ様です。</h2><p>勉強時間を記録しますか？</p><div class="modalBtns"><button class="cancel" onclick="closeModal()">いいえ</button><button class="ok" id="studyYes">はい</button></div>`);
+document.addEventListener("click",e=>{if(e.target.id==="studyYes"){if(state.todayStudy<600){state.todayStudy+=30;state.totalStudy+=30;state.tickets++;save();render();openModal(`<div class="result"><div class="rarity">🎫</div><div class="amount">がちゃ回数券 1枚獲得！</div></div><div class="modalBtns"><button class="ok" onclick="closeModal()">OK</button></div>`)}else{openModal(`<h2>本日の上限です</h2><p>今日は最大10枚まで獲得できます。</p><div class="modalBtns"><button class="ok" onclick="closeModal()">OK</button></div>`)}}});
+
+function confirmDraw(type,count){
+ if(state.tickets<count)return;
+ const name=type==="red"?"🔴 赤がちゃ":"🔵 青がちゃ";
+ openModal(`<h2>${name}</h2><p>🎫 回数券を${count}枚使います。<br>${count===10?"10連＋1を引きます。":"1連を引きます。"}<br><br><b>引きますか？</b></p><div class="modalBtns"><button class="cancel" onclick="closeModal()">やめる</button><button class="ok" id="drawYes">ガチャを引く！</button></div>`);
+ document.getElementById("drawYes").onclick=()=>doDraw(type,count);
+}
+function doDraw(type,count){
+ state.tickets-=count;save();render();
+ const results=[];
+ for(let i=0;i<count;i++){let x=weighted(tables[type]);results.push({rarity:x[0],amount:x[1],drawNo:i+1})}
+ if(count===10){let x=weighted(tables[type+"Bonus"]);results.push({rarity:x[0],amount:x[1],drawNo:11})}
+ // 確定保存してから表示
+ results.forEach(x=>{state.history.push({time:new Date().toLocaleString("ja-JP"),type,drawNo:x.drawNo,rarity:x.rarity,amount:x.amount});state.winnings+=x.amount});
+ save();render();showResults(results,0);
+}
+function showResults(rs,i){
+ if(i>=rs.length){return}
+ const x=rs[i], cls=x.rarity.toLowerCase();
+ openModal(`<div class="result ${x.rarity==="UR"?"flash":""}"><div style="font-size:13px;color:#777">${rs.length===11?x.drawNo+"回目":""}</div><div class="rarity ${cls} spark">${x.rarity}</div><div class="amount">${yen(x.amount)}</div></div>`);
+ const b=document.createElement("button");b.className="ok";b.textContent=i===rs.length-1?"閉じる":"次へ";b.style.width="100%";b.style.padding="12px";b.style.border=0;b.style.borderRadius="11px";b.onclick=()=>showResults(rs,i+1);
+ document.getElementById("modalBody").appendChild(b);
+}
+document.getElementById("red1").onclick=()=>confirmDraw("red",1);
+document.getElementById("blue1").onclick=()=>confirmDraw("blue",1);
+document.getElementById("red10").onclick=()=>confirmDraw("red",10);
+document.getElementById("blue10").onclick=()=>confirmDraw("blue",10);
+
+function detail(html){const d=document.getElementById("detail");d.innerHTML=html;d.classList.add("open");document.getElementById("admin").classList.remove("open")}
+document.getElementById("historyBtn").onclick=()=>{let h=state.history.slice().reverse().map(x=>`<div class="row"><span>${x.time}<br>${x.type==="red"?"🔴":"🔵"} ${x.drawNo}回目・${x.rarity}</span><b>${yen(x.amount)}</b></div>`).join("");detail(`<h3>📜 ガチャ履歴</h3><div class="history">${h||'<div class="empty">まだ履歴はありません。</div>'}</div>`)};
+document.getElementById("statsBtn").onclick=()=>{let r={N:0,R:0,SR:0,SSR:0,UR:0};state.history.forEach(x=>r[x.rarity]++);detail(`<h3>📊 レアリティ集計</h3>${Object.entries(r).map(([k,v])=>`<div class="row"><span>${k}</span><b>${v}回</b></div>`).join("")}`)};
+document.getElementById("moneyBtn").onclick=()=>{let today=new Date().toLocaleDateString("ja-JP");let t=state.history.filter(x=>x.time.startsWith(today)).reduce((a,x)=>a+x.amount,0);detail(`<h3>💰 獲得金額</h3><div class="row"><span>今日の獲得金額</span><b>${yen(t)}</b></div><div class="row"><span>累計獲得金額</span><b>${yen(state.winnings)}</b></div>`)};
+
+document.getElementById("adminBtn").onclick=()=>openModal(`<h2>🔐 管理</h2><p>管理パスワードを入力してください。</p><input id="pw" type="password" autocomplete="off"><div class="modalBtns"><button class="cancel" onclick="closeModal()">キャンセル</button><button class="ok" id="login">入室</button></div>`);
+document.addEventListener("click",e=>{if(e.target.id==="login"){if(document.getElementById("pw").value===ADMIN_PASSWORD){closeModal();showAdmin()}else{openModal(`<h2>パスワードが違います</h2><div class="modalBtns"><button class="ok" onclick="closeModal()">OK</button></div>`)}}});
+function showAdmin(){
+ const a=document.getElementById("admin");a.classList.add("open");document.getElementById("detail").classList.remove("open");
+ a.innerHTML=`<h3>⚙ 管理画面</h3>
+ <label>ガチャ可能回数</label><input id="aTickets" type="number" min="0" value="${state.tickets}">
+ <label>今日の勉強時間（分）</label><input id="aToday" type="number" min="0" value="${state.todayStudy}">
+ <label>累計勉強時間（分）</label><input id="aTotal" type="number" min="0" value="${state.totalStudy}">
+ <div class="adminGrid"><button class="smallbtn" id="adminSave">修正を保存</button><button class="smallbtn" id="adminClose">閉じる</button></div>
+ <hr><p style="font-size:12px;color:#777">ガチャ確率は管理用の裏仕様です。通常画面には表示されません。</p>
+ <button class="smallbtn danger" id="reset">全データ初期化</button>`;
+ document.getElementById("adminSave").onclick=()=>{state.tickets=Math.max(0,+aTickets.value||0);state.todayStudy=Math.max(0,+aToday.value||0);state.totalStudy=Math.max(0,+aTotal.value||0);save();render();showAdmin();};
+ document.getElementById("adminClose").onclick=()=>a.classList.remove("open");
+ document.getElementById("reset").onclick=()=>{if(confirm("全データを初期化します。よろしいですか？")){if(confirm("本当に削除しますか？")){localStorage.removeItem(KEY);state={...defaults};save();render();showAdmin()}}};
+}
+render();
+setInterval(render,60000);
+</script>
+</body>
+</html>
